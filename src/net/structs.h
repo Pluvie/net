@@ -4,9 +4,11 @@
  * in [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2). */
 struct socket {
   str uri;
+  enum socket_families family;
+  enum socket_protocols protocol;
   union {
-    int descriptor;
-    void* handle;
+    int0 descriptor;  /* For POSIX socket systems. */
+    uint0 handle;     /* For Winsock systems. */
   };
 };
 
