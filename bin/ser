@@ -1,0 +1,121 @@
+#!/bin/bash
+
+##
+# Note(Pluvie): this script works with two preconditions:
+# 1. A `ion` symbolic link in the main folder which points to ⚡️ION⚡️ source dir.
+# 2. `cc1` and `inflect` scripts in the `bin` folder as provided by the ⚡️ION⚡️ library.
+##
+
+if [[ $# -lt 1 ]]; then
+  echo "Usage: bin/ser APP COMMAND"
+  exit 1
+fi
+
+PLATFORM="LINUX"
+DEFAULT_FLAGS="-std=c11 -Wall -Werror"
+
+if [[ $1 == "spec" ]]; then
+  SPECS=$(find app/spec/specs/ -name "*.c" -type f | tr '\n' ' ')
+  FILES="app/spec/main.c app/spec/containers.c $SPECS"
+
+  if [[ $2 == "prep" ]]; then
+    gcc $FILES                    \
+      $DEFAULT_FLAGS              \
+      -D PLATFORM=$PLATFORM       \
+      -I ./src                    \
+      -I ./ion                    \
+      -E | bin/inflect > tmp/spec.c
+
+    exit $?
+  fi
+
+  gcc $FILES                    \
+    -no-integrated-cpp -B ./bin \
+    $DEFAULT_FLAGS              \
+    -D PLATFORM=$PLATFORM       \
+    -I ./src                    \
+    -I ./ion                    \
+    -g3 -o exe/spec
+
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+
+  if [[ $2 == "run" ]]; then
+    valgrind                    \
+      --track-origins=yes       \
+      --leak-check=full         \
+      --show-leak-kinds=all     \
+      exe/spec
+    echo
+
+  elif [[ $2 == "debug" ]]; then
+    gdb exe/spec
+
+  else
+    echo "Usage: bin/ser spec [run|prep|debug]"
+    exit 1
+  fi
+
+elif [[ $1 == "perf" ]]; then
+  FILES="app/perf/main.c app/perf/containers.c"
+
+  if [[ $2 == "debug" ]]; then
+    gcc $FILES                    \
+      -no-integrated-cpp -B ./bin \
+      $DEFAULT_FLAGS              \
+      -D PLATFORM=$PLATFORM       \
+      -I ./src                    \
+      -I ./ion                    \
+      -g3 -o exe/perf
+
+    if [ $? -ne 0 ]; then
+      exit 1
+    fi
+
+    valgrind                    \
+      --track-origins=yes       \
+      --leak-check=full         \
+      --show-leak-kinds=all     \
+      exe/perf
+    echo
+
+    exit $?
+  fi
+
+
+  gcc $FILES                    \
+    -no-integrated-cpp -B ./bin \
+    $DEFAULT_FLAGS              \
+    -D PLATFORM=$PLATFORM       \
+    -I ./src                    \
+    -I ./ion                    \
+    -O3 -march=native           \
+    -o exe/perf
+
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+
+  if [[ $2 == "run" ]]; then
+    exe/perf
+
+  else
+    echo "Usage: bin/ser perf [debug|run]"
+    exit 1
+  fi
+
+
+elif [[ $1 == "lib" ]]; then
+
+  gcc $ION/ser.c            \
+    $DEFAULT_FLAGS          \
+    -D PLATFORM=$PLATFORM   \
+    -o exe/libser.so        \
+    -I ./ion                \
+    -I ./src                \
+    -O3 -march=native       \
+    -shared -fPIC
+
+  exit $?
+fi
