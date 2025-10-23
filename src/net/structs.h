@@ -3,7 +3,7 @@
  * brackets are necessary in order to avoid confusion with the port, as specified
  * in [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2). */
 struct socket {
-  str uri;
+  str address;
   int port;
 #if   platform(LINUX)
   int0 descriptor;
@@ -30,10 +30,12 @@ struct tcp {
 };
 
 struct http {
+  str host;
   struct socket socket;
 };
 
 struct http_message {
+  unsigned int status;
   str method;
   str path;
   map<str, str> headers;

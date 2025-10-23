@@ -8,7 +8,7 @@
   #include <sys/socket.h>
   #include <sys/types.h>
   #include <sys/un.h>
-  #define sleep sleep_s
+  #define sleep sleep_unistd /* ⚡️ION⚡️ already provides the `sleep` function. */
   #include <unistd.h>
   #undef  sleep
 

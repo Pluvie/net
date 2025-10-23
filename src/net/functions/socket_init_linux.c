@@ -1,9 +1,9 @@
 
-  struct socket sock = { .uri = uri, .port = port };
+  struct socket sock = { .address = address, .port = port };
 
-  /* Check for an empty uri. Duh. */
-  if (unlikely(str_empty(uri))) {
-    fail("socket_init: empty uri");
+  /* Check for an empty address. Duh. */
+  if (unlikely(str_empty(address))) {
+    fail("socket_init: empty address");
     return sock;
   }
 
@@ -17,13 +17,13 @@
     fail("socket_init: unsupported protocol");
   }
 
-  /* Depending on the given uri, tries to deduce the corresponding address. URIs
-    starting with a digit ('0'..'9') are assumed to be IPv4 -- like 127.0.0.1. URIs
-    starting with a square bracket ('[') are assumed to be IPv6, according to
+  /* Depending on the given address, tries to deduce the corresponding address.
+    Addresses starting with a digit ('0'..'9') are assumed to be IPv4 -- like 127.0.0.1.
+    Addresses starting with a square bracket ('[') are assumed to be IPv6, according to
     [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2).
-    Other URIs are assumed to be host names, such as "www.google.com". In this
+    Other addresses are assumed to be address names, such as "www.google.com". In this
     case, a DNS solution to resolve its IPv4 or IPv6 address is necessary. */
-  switch (*uri.chars) {
+  switch (*address.chars) {
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     goto ipv4_address;
@@ -37,7 +37,7 @@ ipv4_address:
   sock.family = AF_INET;
 
   char ipv4[INET_ADDRSTRLEN] = { 0 };
-  prints(ipv4, sizeof(ipv4), f(sock.uri));
+  prints(ipv4, sizeof(ipv4), f(sock.address));
 
   sock.ipv4.sin_family = sock.family;
   sock.ipv4.sin_port = htons(sock.port);
@@ -53,7 +53,7 @@ ipv6_address:
   sock.family = AF_INET6;
 
   char ipv6[INET6_ADDRSTRLEN] = { 0 };
-  prints(ipv6, sizeof(ipv6), f(sock.uri));
+  prints(ipv6, sizeof(ipv6), f(sock.address));
 
   sock.ipv6.sin6_family = sock.family;
   sock.ipv6.sin6_port = htons(sock.port);
@@ -67,12 +67,12 @@ ipv6_address:
 
 resolve_address:
   /* Address to be resolved. */
-  char uri_to_resolve[NI_MAXHOST] = { 0 };
+  char address_to_resolve[NI_MAXHOST] = { 0 };
   char port_to_resolve[NI_MAXSERV] = { 0 };
-  prints(uri_to_resolve, sizeof(uri_to_resolve), f(uri));
+  prints(address_to_resolve, sizeof(address_to_resolve), f(address));
   prints(port_to_resolve, sizeof(port_to_resolve), f(port));
   /* Uncomment to debug name and service resolution.
-  printl("name >>> ", uri_to_resolve);
+  printl("name >>> ", address_to_resolve);
   printl("service >>> ", port_to_resolve); */
 
   struct addrinfo hints = {
@@ -81,7 +81,7 @@ resolve_address:
   };
   struct addrinfo* results;
 
-  int error = getaddrinfo(uri_to_resolve, port_to_resolve, &hints, &results);
+  int error = getaddrinfo(address_to_resolve, port_to_resolve, &hints, &results);
   if (unlikely(error != 0)) {
     fail("socket_init: getaddrinfo error. ", gai_strerror(error));
     return sock;
