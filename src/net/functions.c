@@ -1,60 +1,31 @@
+#include "functions/socket_init.c"
+
 /* SOCKET APIs */
-struct socket socket_init (
-    str uri,
-    str proto
-)
-{
-  struct socket sock = { .uri = uri };
-
-  if (unlikely(str_empty(uri))) {
-    fail("socket_init: empty uri");
-    return sock;
-  }
-
-  if (str_equal(uri, string("file://"))) {
-    /* Local socket. */
-    socket.family = LOCAL;
-
-  } else {
-    /* Internet socket. */
-    switch (*uri.chars) {
-    case '[':
-      /* IPv6 address. */
-      socket.family = IP_V6;
-
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-      /* IPv4 address. */
-      socket.family = IP_V4;
-
-    default:
-      /* Hostname to be resolved. */
-    }
-  }
-
-  if (str_equal(proto, string("tcp")))
-    sock.protocol = TCP;
-  else if (str_equal(proto, string("udp")))
-    sock.protocol = UDP;
-
-  sock.descriptor = socket(sock.family, sock.protocol, 0);
-  if (unlikely(sock.descriptor < 0))
-    fail("socket_init: internal failure");
-
-  return sock;
-}
-
 void socket_client_start (
     struct socket* sock
-);
+)
+{
+  switch (sock->family) {
+  case AF_INET: {
+    int result = connect(sock->descriptor, &(sock->ipv4), sizeof(sock->ipv4));
+    if (result == -1)
+      fail("socket_client_start: connect failure. ", strerror(errno));
+    break;
+  }
+
+  case AF_INET6: {
+    int result = connect(sock->descriptor, &(sock->ipv6), sizeof(sock->ipv6));
+    if (result == -1)
+      fail("socket_client_start: connect failure. ", strerror(errno));
+    break;
+  }
+
+  default:
+    fail("socket connect error: unsupported socket type");
+  }
+
+  return;
+}
 
 void socket_server_start (
     struct socket* sock
@@ -74,24 +45,29 @@ void socket_send (
 
 void socket_close (
     struct socket* sock
-);
+)
+{
+  close(sock->descriptor);
+}
 
 /* TCP APIs */
 struct tcp tcp_client_start (
-    str uri
+    str uri,
+    int port
 )
 {
-  struct tcp tcp = { 0 };
-  tcp.socket = socket_init(uri, string("tcp"));
+  struct tcp client = { 0 };
+  client.socket = socket_init(uri, port, SOCK_STREAM);
   if (unlikely(failure.occurred))
-    return tcp;
+    return client;
 
-  
-  return tcp;
+  socket_client_start(&(client.socket));
+  return client;
 }
 
 struct tcp tcp_server_start (
-    str uri
+    str uri,
+    int port
 );
 
 /* HTTP APIs */
@@ -99,7 +75,12 @@ struct http http_client_start (
     str uri
 )
 {
-  struct http client = { .uri = uri, .tcp = tcp_client_start(uri) };
+  struct http client = { 0 };
+  client.socket = socket_init(uri, 80, SOCK_STREAM);
+  if (unlikely(failure.occurred))
+    return client;
+
+  socket_client_start(&(client.socket));
   return client;
 }
 
@@ -116,3 +97,10 @@ void http_send (
     struct http* server,
     struct http_message* message
 );
+
+void http_close (
+    struct http* http
+)
+{
+  socket_close(&(http->socket));
+}

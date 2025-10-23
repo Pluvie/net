@@ -4,12 +4,21 @@
  * in [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2). */
 struct socket {
   str uri;
-  enum socket_families family;
-  enum socket_protocols protocol;
+  int port;
+#if   platform(LINUX)
+  int0 descriptor;
+  int0 family;
+  int0 protocol;
   union {
-    int0 descriptor;  /* For POSIX socket systems. */
-    uint0 handle;     /* For Winsock systems. */
+    struct sockaddr_in  ipv4;
+    struct sockaddr_in6 ipv6;
+    struct sockaddr_un  path;
   };
+#elif platform(WINDOWS)
+  SOCKET handle;
+  int0 family;
+  int0 protocol;
+#endif
 };
 
 struct udp {
@@ -21,8 +30,7 @@ struct tcp {
 };
 
 struct http {
-  str uri;
-  struct tcp tcp;
+  struct socket socket;
 };
 
 struct http_message {

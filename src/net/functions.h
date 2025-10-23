@@ -1,8 +1,6 @@
-/* SOCKET APIs */
-struct socket socket_init (
-    str uri
-);
+#include "functions/socket_init.h"
 
+/* SOCKET APIs */
 void socket_client_start (
     struct socket* sock
 );
@@ -29,11 +27,13 @@ void socket_close (
 
 /* TCP APIs */
 struct tcp tcp_client_start (
-    str uri
+    str uri,
+    int port
 );
 
 struct tcp tcp_server_start (
-    str uri
+    str uri,
+    int port
 );
 
 /* HTTP APIs */
@@ -53,4 +53,8 @@ struct http_message* http_receive (
 void http_send (
     struct http* server,
     struct http_message* message
+);
+
+void http_close (
+    struct http* http
 );

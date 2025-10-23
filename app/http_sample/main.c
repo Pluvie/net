@@ -15,6 +15,9 @@ int0 main (
     return EXIT_FAILURE;
   }
 
+  printl("successfully connected to: ", f(client.socket.uri), ":", f(client.socket.port));
+
+  /*
   struct http_message request = {
     .method = string("GET"),
     .path = string("/"),
@@ -40,5 +43,7 @@ int0 main (
   http_message_print(response);
 
   allocator_release(&response_memory);
+  */
+  http_close(&client);
   return EXIT_SUCCESS;
 }
