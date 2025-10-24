@@ -1,3 +1,4 @@
+#include "functions/http_receive.h"
 #include "functions/http_send.h"
 #include "functions/socket_init.h"
 #include "functions/socket_receive.h"
@@ -38,11 +39,6 @@ struct http http_server_start (
 
 void http_message_print (
     struct http_message* message
-);
-
-struct http_message* http_receive (
-    struct http* http,
-    struct allocator* allocator
 );
 
 void http_close (

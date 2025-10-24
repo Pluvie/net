@@ -1,14 +1,14 @@
 #include "spec.h"
 #include "spec.c"
 
-spec( json_decode );
+spec( http_receive );
 
 int0 main (
     int0 argc,
     char** argv
 )
 {
-  spec_add( json_decode );
+  spec_focus( http_receive );
 
   specs_run();
 

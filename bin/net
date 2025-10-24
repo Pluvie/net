@@ -17,7 +17,7 @@ DEFAULT_FLAGS="-std=c11 -Wall -Werror"
 
 if [[ $1 == "spec" ]]; then
   SPECS=$(find app/spec/specs/ -name "*.c" -type f | tr '\n' ' ')
-  FILES="app/spec/main.c app/spec/containers.c $SPECS"
+  FILES="app/spec/main.c $SPECS"
 
   if [[ $2 == "prep" ]]; then
     mkdir -p tmp
