@@ -5,7 +5,8 @@
 #include "functions/socket_send.h"
 
 /* SOCKET APIs */
-void socket_client_start (
+Attribute__No_Discard
+bool socket_client_start (
     struct socket* sock
 );
 

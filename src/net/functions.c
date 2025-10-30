@@ -5,30 +5,36 @@
 #include "functions/socket_send.c"
 
 /* SOCKET APIs */
-void socket_client_start (
+bool socket_client_start (
     struct socket* sock
 )
 {
+#if platform(LINUX)
+  int result;
+
   switch (sock->family) {
   case AF_INET: {
-    int result = connect(sock->descriptor, &(sock->ipv4), sizeof(sock->ipv4));
+    result = connect(sock->descriptor, &(sock->ipv4), sizeof(sock->ipv4));
     if (result == -1)
-      fail("socket_client_start: connect failure. ", strerror(errno));
-    break;
+      return fail("socket connection failure");
   }
 
   case AF_INET6: {
-    int result = connect(sock->descriptor, &(sock->ipv6), sizeof(sock->ipv6));
+    result = connect(sock->descriptor, &(sock->ipv6), sizeof(sock->ipv6));
     if (result == -1)
-      fail("socket_client_start: connect failure. ", strerror(errno));
-    break;
+      return fail("socket connection failure");
   }
 
   default:
-    fail("socket connect error: unsupported socket type");
+    return fail("unsupported socket type");
   }
 
-  return;
+  return true;
+
+#elif platform(WINDOWS)
+  /* To do. */
+
+#endif
 }
 
 void socket_server_start (

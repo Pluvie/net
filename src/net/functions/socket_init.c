@@ -1,9 +1,12 @@
-struct socket socket_init (
-    str address,
+bool socket_init (
+    struct socket* sock,
+    str host,
     int port,
     int protocol
 )
 {
+  memory_set(sock, 0, sizeof(*sock));
+
 #if   platform(LINUX)
   #include "socket_init_linux.c"
 

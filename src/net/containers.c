@@ -1,7 +1,6 @@
-#define set_of str
-#define set_cmp_function(v, u) str_equal(v, u)
-#define set_hash_function(v) hash_djb2(v.chars, v.length)
-#include <ion/containers/set.c>
-
-#define map_of str, str
+#define container_for_key str
+#define container_for_value str
+#define container_name http_headers
+#define container_equalizer(a, b) str_equal(a, b)
+#define container_hasher(e) hash_djb2(e.chars, e.length)
 #include <ion/containers/map.c>

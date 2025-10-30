@@ -28,7 +28,7 @@ void http_send (
 
   /* Adds the content length header, if a body is present. */
   if (!str_empty(message->body)) {
-    char content_length[sizeof(INT_MAXNUM)] = { 0 };
+    char content_length[INT_MAXCHARS] = { 0 };
     int number_length = prints(
       content_length, sizeof(content_length), f(message->body.length));
     str_build(&builder, string("Content-Length: "));

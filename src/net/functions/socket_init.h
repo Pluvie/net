@@ -1,5 +1,6 @@
-struct socket socket_init (
-    str address,
+bool socket_init (
+    struct socket* sock,
+    str host,
     int port,
     int protocol
 );

@@ -1,6 +1,3 @@
-#include <ion.h>
-#include <ion.c>
-
 #include <net.h>
 #include <net.c>
 

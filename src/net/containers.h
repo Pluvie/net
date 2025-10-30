@@ -1,12 +1,4 @@
-#define set_of str
-#include <ion/containers/set.h>
-
-#define map_of str, str
+#define container_for_key str
+#define container_for_value str
+#define container_name http_headers
 #include <ion/containers/map.h>
-
-#if standard(>= C11)
-#define map_function(type, func, ...)       \
-  _Generic(type,                            \
-    map<str, str> : map<str, str>_ ## func  \
-  )
-#endif

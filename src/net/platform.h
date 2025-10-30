@@ -1,4 +1,4 @@
-#include <ion/external.h>
+#include <ion/allow_include.h>
 
 #if platform(LINUX)
   #include <arpa/inet.h>
@@ -8,9 +8,7 @@
   #include <sys/socket.h>
   #include <sys/types.h>
   #include <sys/un.h>
-  #define sleep sleep_unistd /* ⚡️ION⚡️ already provides the `sleep` function. */
   #include <unistd.h>
-  #undef  sleep
 
 #elif platform(WINDOWS)
   #include <winsock2.h>
@@ -20,4 +18,4 @@
   #error "🌐NET📡: Unsupported platform."
 #endif
 
-#include <ion/external.h>
+#include <ion/allow_include.h>

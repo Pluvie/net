@@ -5,10 +5,16 @@ int socket_receive (
     int flags
 )
 {
+#if platform(LINUX)
   int result = recv(sock->descriptor, data, length, flags);
   if (unlikely(result == -1)) {
     fail("socket_receive: ", strerror(errno));
     return -1;
   }
   return result;
+
+#elif platform(WINDOWS)
+  /* To do. */
+
+#endif
 }
