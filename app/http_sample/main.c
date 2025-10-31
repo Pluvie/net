@@ -110,13 +110,13 @@ int_t main (
     cstr* argv
 )
 {
-  bool success;
+  int error;
   struct http client = { 0 };
   struct allocator allocator = allocator_init(0);
   str host = str("echo.free.beeceptor.com");
 
-  success = http_client_start(&client, host);
-  if (unlikely(success == false)) {
+  error = http_client_start(&client, host);
+  if (unlikely(error)) {
     print_failure("HTTP client failed");
     return EXIT_FAILURE;
   }

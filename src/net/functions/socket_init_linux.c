@@ -75,7 +75,7 @@ resolve_address:
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = sock->protocol;
   memory_copy(address_to_resolve, host.chars, sizeof(address_to_resolve) - 1);
-  memory_copy(port_to_resolve, host.chars, sizeof(port_to_resolve) - 1);
+  sprintf(port_to_resolve, "%"fmt(INT), port);
   error = getaddrinfo(address_to_resolve, port_to_resolve, &hints, &results);
   if (unlikely(error != 0))
     return fail(gai_strerror(error));
@@ -86,6 +86,9 @@ resolve_address:
       sock->address.ipv4.sin_family = current->ai_family;
       sock->address.ipv4.sin_port = htons(sock->port);
       sock->address.ipv4.sin_addr = ((struct sockaddr_in*) current->ai_addr)->sin_addr;
+      /* Uncomment to debug IP resolution.
+        inet_ntop(sock.family, &(sock->address.ipv4.sin_addr), ipv4, sizeof(ipv4));
+        printl("resolved IP: %"fmt(CSTR), ipv4); */
       break;
 
     } else if (current->ai_family == AF_INET6) {
@@ -93,6 +96,9 @@ resolve_address:
       sock->address.ipv6.sin6_family = current->ai_family;
       sock->address.ipv6.sin6_port = htons(sock->port);
       sock->address.ipv6.sin6_addr = ((struct sockaddr_in6*) current->ai_addr)->sin6_addr;
+      /* Uncomment to debug IP resolution.
+        inet_ntop(sock.family, &(sock->address.ipv6.sin6_addr), ipv6, sizeof(ipv6));
+        printl("resolved IP: %"fmt(CSTR), ipv6); */
       break;
     }
   }

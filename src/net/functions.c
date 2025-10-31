@@ -12,17 +12,20 @@ int socket_client_start (
 #if platform(LINUX)
   int result;
 
+  printl("wattafuck family: %"fmt(INT_T), sock->family);
   switch (sock->family) {
   case AF_INET: {
     result = connect(sock->descriptor, &(sock->address.ipv4), sizeof(sock->address.ipv4));
     if (unlikely(result == -1))
       return fail("socket connection failure");
+    break;
   }
 
   case AF_INET6: {
     result = connect(sock->descriptor, &(sock->address.ipv6), sizeof(sock->address.ipv6));
     if (unlikely(result == -1))
       return fail("socket connection failure");
+    break;
   }
 
   default:
@@ -83,8 +86,9 @@ int http_client_start (
     str host
 )
 {
-  bool error;
+  int error;
   memory_set(client, 0, sizeof(*client));
+  client->host = host;
 
   error = socket_init(&(client->socket), host, 80, SOCK_STREAM);
   if (unlikely(error))
