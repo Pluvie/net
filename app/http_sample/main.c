@@ -6,30 +6,38 @@ void get (
     struct allocator* allocator
 )
 {
-  struct http_message get_request = {
-    .method = string("GET"),
-    .path = string("/"),
-    .headers = map(str, str, {
-      { string("User-Agent"), string("libnet") },
-    }),
-  };
-  printl();
-  printl(">>>>>>>");
-  http_message_print(&get_request);
+  int error;
 
-  http_send(client, &get_request);
+  { /* Firing off the request. */
+    struct http_message request = { str("GET"), str("/") };
+    struct http_header headers[] = {
+      { str("User-Agent"), str("libnet") },
+    };
+    request.headers = http_headers_alloc(16, allocator);
+    http_message_set_headers(&request, headers, countof(headers));
 
-  if (failure.occurred) {
-    printl("HTTP send failed: ", failure.message);
-    return;
+    printl("");
+    printl(">>>>>>>");
+    printl("Sending request:");
+    http_message_print(&request);
+
+    error = http_send(client, &request, allocator);
+    if (unlikely(error))
+      return;
   }
 
-  http_receive(client, allocator);
-  //struct http_message* response = http_receive(client, allocator);
-  //printl();
-  //printl("<<<<<<<");
-  //printl("Received response:");
-  //http_message_print(response);
+  { /* Receiving the response. */
+    struct http_message response = { 0 };
+
+    error = http_receive(client, &response, allocator);
+    if (unlikely(error))
+      return;
+
+    printl("");
+    printl("<<<<<<<");
+    printl("Received response:");
+    http_message_print(&response);
+  }
 }
 
 void post (
@@ -37,6 +45,7 @@ void post (
     struct allocator* allocator
 )
 {
+/*
   struct http_message post_request = {
     .method = string("POST"),
     .path = string("/create"),
@@ -93,26 +102,29 @@ void post (
   //printl();
   //printl("<<<<<<<");
   //http_message_print(&post_request);
+  */
 }
 
-int0 main (
-    int0 argc,
-    char** argv
+int_t main (
+    int_t argc,
+    cstr* argv
 )
 {
-  str host = string("echo.free.beeceptor.com");
-  struct http client = http_client_start(host);
-  if (unlikely(failure.occurred)) {
-    printl("HTTP client failed: ", failure.message);
+  bool success;
+  struct http client = { 0 };
+  struct allocator allocator = allocator_init(0);
+  str host = str("echo.free.beeceptor.com");
+
+  success = http_client_start(&client, host);
+  if (unlikely(success == false)) {
+    print_failure("HTTP client failed");
     return EXIT_FAILURE;
   }
 
-  struct allocator response_memory = allocator_init(0);
+  get(&client, &allocator);
+  /*post(&client, &allocator);*/
 
-  //get(&client, &response_memory);
-  post(&client, &response_memory);
-
-  allocator_release(&response_memory);
+  allocator_release(&allocator);
   http_close(&client);
   return EXIT_SUCCESS;
 }

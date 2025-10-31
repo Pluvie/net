@@ -30,15 +30,20 @@ struct http {
   struct socket socket;
 };
 
+struct http_header {
+  str key;
+  str value;
+};
+
 struct http_body {
   str content;
   /* Add other useful things maybe for multipart? */
 };
 
 struct http_message {
-  uint status;
   str method;
   str path;
+  uint status;
   struct http_headers headers;
   struct http_body body;
   struct allocator* allocator;

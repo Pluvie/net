@@ -1,4 +1,4 @@
-bool socket_init (
+int socket_init (
     struct socket* sock,
     str host,
     int port,

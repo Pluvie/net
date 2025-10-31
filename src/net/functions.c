@@ -5,7 +5,7 @@
 #include "functions/socket_send.c"
 
 /* SOCKET APIs */
-bool socket_client_start (
+int socket_client_start (
     struct socket* sock
 )
 {
@@ -14,14 +14,14 @@ bool socket_client_start (
 
   switch (sock->family) {
   case AF_INET: {
-    result = connect(sock->descriptor, &(sock->ipv4), sizeof(sock->ipv4));
-    if (result == -1)
+    result = connect(sock->descriptor, &(sock->address.ipv4), sizeof(sock->address.ipv4));
+    if (unlikely(result == -1))
       return fail("socket connection failure");
   }
 
   case AF_INET6: {
-    result = connect(sock->descriptor, &(sock->ipv6), sizeof(sock->ipv6));
-    if (result == -1)
+    result = connect(sock->descriptor, &(sock->address.ipv6), sizeof(sock->address.ipv6));
+    if (unlikely(result == -1))
       return fail("socket connection failure");
   }
 
@@ -29,7 +29,7 @@ bool socket_client_start (
     return fail("unsupported socket type");
   }
 
-  return true;
+  return SUCCESS;
 
 #elif platform(WINDOWS)
   /* To do. */
@@ -37,7 +37,7 @@ bool socket_client_start (
 #endif
 }
 
-void socket_server_start (
+int socket_server_start (
     struct socket* sock
 );
 
@@ -51,40 +51,54 @@ void socket_close (
 }
 
 /* TCP APIs */
-struct tcp tcp_client_start (
-    str address,
+int tcp_client_start (
+    struct tcp* client,
+    str host,
     int port
 )
 {
-  struct tcp client = { 0 };
-  client.socket = socket_init(address, port, SOCK_STREAM);
-  if (unlikely(failure.occurred))
-    return client;
+  int error;
+  memory_set(client, 0, sizeof(*client));
 
-  socket_client_start(&(client.socket));
-  return client;
+  error = socket_init(&(client->socket), host, port, SOCK_STREAM);
+  if (unlikely(error))
+    return FAILURE;
+
+  error = socket_client_start(&(client->socket));
+  if (unlikely(error))
+    return FAILURE;
+
+  return SUCCESS;
 }
 
-struct tcp tcp_server_start (
-    str address,
+int tcp_server_start (
+    struct tcp* server,
+    str host,
     int port
 );
 
 /* HTTP APIs */
-struct http http_client_start (
+int http_client_start (
+    struct http* client,
     str host
 )
 {
-  struct http client = { .host = host };
-  client.socket = socket_init(host, 80, SOCK_STREAM);
-  if (unlikely(failure.occurred))
-    return client;
+  bool error;
+  memory_set(client, 0, sizeof(*client));
 
-  socket_client_start(&(client.socket));
-  return client;
+  error = socket_init(&(client->socket), host, 80, SOCK_STREAM);
+  if (unlikely(error))
+    return FAILURE;
+
+  error = socket_client_start(&(client->socket));
+  if (unlikely(error))
+    return FAILURE;
+
+  return SUCCESS;
 }
 
-struct http http_server_start (
+int http_server_start (
+    struct http* client,
     str host
 );
 
@@ -92,14 +106,29 @@ void http_message_print (
     struct http_message* message
 )
 {
-  printl("Method: ", f(message->method));
-  printl("Path: ", f(message->path));
+  printl("Method: %"fmt(STR), str_fmt(message->method));
+  printl("Path: %"fmt(STR), str_fmt(message->path));
   printl("Headers:");
-  for map_each(&(message->headers), str* name, str* value)
-    printl("  ", f(*name), ": ", f(*value));
-  if (str_empty(message->body))
+  {
+    str* key; str* value; struct iterator iter = { 0 };
+    while (http_headers_each(&(message->headers), &iter, &key, &value))
+      printl("  %"fmt(STR)": %"fmt(STR), str_fmt(*key), str_fmt(*value));
+  }
+  if (str_empty(message->body.content))
     return;
-  printl("Body:\n", f(message->body));
+  printl("Body:\n%"fmt(STR), str_fmt(message->body.content));
+}
+
+void http_message_set_headers (
+    struct http_message* message,
+    struct http_header* headers,
+    uint length
+)
+{
+  uint i; for (i = 0; i < length; i++) {
+    struct http_header* header = headers + i;
+    http_headers_set(&(message->headers), header->key, header->value);
+  }
 }
 
 

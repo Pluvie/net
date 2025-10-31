@@ -1,4 +1,5 @@
-static inline str http_receive_incipit (
+/*
+static void http_receive_incipit (
     struct http* http,
     struct http_message* message,
     struct allocator* allocator
@@ -6,7 +7,7 @@ static inline str http_receive_incipit (
 {
 }
 
-static inline str http_receive_status (
+static void http_receive_status (
     struct http* http,
     struct http_message* message,
     struct allocator* allocator
@@ -54,3 +55,4 @@ static inline str http_receive_status (
   fail("http_receive: incipit too long");
   return cursor;
 }
+*/

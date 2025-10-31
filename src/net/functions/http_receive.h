@@ -1,4 +1,5 @@
-struct http_message* http_receive (
+bool http_receive (
     struct http* http,
+    struct http_message* message,
     struct allocator* allocator
 );

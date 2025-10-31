@@ -1,6 +1,6 @@
 int socket_send (
     struct socket* sock,
-    unsigned int length,
+    uint length,
     void* data,
     int flags
 );

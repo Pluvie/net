@@ -1,6 +1,7 @@
+Attribute__No_Discard
 int socket_receive (
     struct socket* sock,
-    unsigned int length,
+    uint length,
     void* data,
     int flags
 );

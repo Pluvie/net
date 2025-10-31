@@ -1,6 +1,6 @@
 int socket_receive (
     struct socket* sock,
-    unsigned int length,
+    uint length,
     void* data,
     int flags
 )
@@ -8,9 +8,10 @@ int socket_receive (
 #if platform(LINUX)
   int result = recv(sock->descriptor, data, length, flags);
   if (unlikely(result == -1)) {
-    fail("socket_receive: ", strerror(errno));
+    fail("socket receive failure");
     return -1;
   }
+
   return result;
 
 #elif platform(WINDOWS)

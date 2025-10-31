@@ -1,6 +1,7 @@
-void http_send (
+int http_send (
     struct http* http,
-    struct http_message* message
+    struct http_message* message,
+    struct allocator* allocator
 )
 {
   /* Prepares the request inicipit: line and headers. Begins by creating the line
