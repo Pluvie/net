@@ -111,4 +111,4 @@ initialize_descriptor:
   if (unlikely(sock->descriptor < 0))
     return fail("socket internal failure");
 
-  return SUCCESS;
+  return Success;

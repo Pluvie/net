@@ -5,14 +5,13 @@
 #include "functions/socket_send.c"
 
 /* SOCKET APIs */
-int socket_client_start (
+enum result socket_client_start (
     struct socket* sock
 )
 {
 #if platform(LINUX)
-  int result;
+  enum result result;
 
-  printl("wattafuck family: %"fmt(INT_T), sock->family);
   switch (sock->family) {
   case AF_INET: {
     result = connect(sock->descriptor, &(sock->address.ipv4), sizeof(sock->address.ipv4));
@@ -32,7 +31,7 @@ int socket_client_start (
     return fail("unsupported socket type");
   }
 
-  return SUCCESS;
+  return Success;
 
 #elif platform(WINDOWS)
   /* To do. */
@@ -40,7 +39,7 @@ int socket_client_start (
 #endif
 }
 
-int socket_server_start (
+enum result socket_server_start (
     struct socket* sock
 );
 
@@ -54,54 +53,54 @@ void socket_close (
 }
 
 /* TCP APIs */
-int tcp_client_start (
+enum result tcp_client_start (
     struct tcp* client,
     str host,
     int port
 )
 {
-  int error;
+  enum result result;
   memory_set(client, 0, sizeof(*client));
 
-  error = socket_init(&(client->socket), host, port, SOCK_STREAM);
-  if (unlikely(error))
-    return FAILURE;
+  result = socket_init(&(client->socket), host, port, SOCK_STREAM);
+  if (unlikely(result == Failure))
+    return Failure;
 
-  error = socket_client_start(&(client->socket));
-  if (unlikely(error))
-    return FAILURE;
+  result = socket_client_start(&(client->socket));
+  if (unlikely(result == Failure))
+    return Failure;
 
-  return SUCCESS;
+  return Success;
 }
 
-int tcp_server_start (
+enum result tcp_server_start (
     struct tcp* server,
     str host,
     int port
 );
 
 /* HTTP APIs */
-int http_client_start (
+enum result http_client_start (
     struct http* client,
     str host
 )
 {
-  int error;
+  enum result result;
   memory_set(client, 0, sizeof(*client));
   client->host = host;
 
-  error = socket_init(&(client->socket), host, 80, SOCK_STREAM);
-  if (unlikely(error))
-    return FAILURE;
+  result = socket_init(&(client->socket), host, 80, SOCK_STREAM);
+  if (unlikely(result == Failure))
+    return Failure;
 
-  error = socket_client_start(&(client->socket));
-  if (unlikely(error))
-    return FAILURE;
+  result = socket_client_start(&(client->socket));
+  if (unlikely(result == Failure))
+    return Failure;
 
-  return SUCCESS;
+  return Success;
 }
 
-int http_server_start (
+enum result http_server_start (
     struct http* client,
     str host
 );
@@ -110,31 +109,12 @@ void http_message_print (
     struct http_message* message
 )
 {
-  printl("Method: %"fmt(STR), str_fmt(message->method));
-  printl("Path: %"fmt(STR), str_fmt(message->path));
-  printl("Headers:");
-  {
-    str* key; str* value; struct iterator iter = { 0 };
-    while (http_headers_each(&(message->headers), &iter, &key, &value))
-      printl("  %"fmt(STR)": %"fmt(STR), str_fmt(*key), str_fmt(*value));
-  }
-  if (str_empty(message->body.content))
-    return;
-  printl("Body:\n%"fmt(STR), str_fmt(message->body.content));
-}
+  print("%"fmt(STR), str_fmt(message->incipit));
+  if (!str_empty(message->body))
+    print("%"fmt(STR), str_fmt(message->body));
 
-void http_message_set_headers (
-    struct http_message* message,
-    struct http_header* headers,
-    uint length
-)
-{
-  uint i; for (i = 0; i < length; i++) {
-    struct http_header* header = headers + i;
-    http_headers_set(&(message->headers), header->key, header->value);
-  }
+  printl("");
 }
-
 
 void http_close (
     struct http* http

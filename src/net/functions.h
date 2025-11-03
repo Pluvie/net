@@ -6,12 +6,12 @@
 
 /* SOCKET APIs */
 Attribute__No_Discard
-int socket_client_start (
+enum result socket_client_start (
     struct socket* sock
 );
 
 Attribute__No_Discard
-int socket_server_start (
+enum result socket_server_start (
     struct socket* sock
 );
 
@@ -21,14 +21,14 @@ void socket_close (
 
 /* TCP APIs */
 Attribute__No_Discard
-int tcp_client_start (
+enum result tcp_client_start (
     struct tcp* client,
     str address,
     int port
 );
 
 Attribute__No_Discard
-int tcp_server_start (
+enum result tcp_server_start (
     struct tcp* server,
     str address,
     int port
@@ -36,25 +36,19 @@ int tcp_server_start (
 
 /* HTTP APIs */
 Attribute__No_Discard
-int http_client_start (
+enum result http_client_start (
     struct http* client,
     str host
 );
 
 Attribute__No_Discard
-int http_server_start (
+enum result http_server_start (
     struct http* server,
     str host
 );
 
 void http_message_print (
     struct http_message* message
-);
-
-void http_message_set_headers (
-    struct http_message* message,
-    struct http_header* headers,
-    uint length
 );
 
 void http_close (

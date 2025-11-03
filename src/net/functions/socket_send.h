@@ -1,6 +1,7 @@
-int socket_send (
+Attribute__No_Discard
+enum result socket_send (
     struct socket* sock,
-    uint length,
     void* data,
-    int flags
+    uint length,
+    int* sent_bytes_ptr
 );

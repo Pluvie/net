@@ -1,7 +1,7 @@
 Attribute__No_Discard
-int socket_receive (
+enum result socket_receive (
     struct socket* sock,
-    uint length,
     void* data,
-    int flags
+    uint length,
+    int* received_bytes_ptr
 );

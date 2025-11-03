@@ -2,6 +2,7 @@ struct socket {
   str host;
   int port;
 #if   platform(LINUX)
+  int_t flags;
   int_t descriptor;
   int_t family;
   int_t protocol;
@@ -31,7 +32,7 @@ struct http {
 };
 
 struct http_header {
-  str key;
+  str name;
   str value;
 };
 
@@ -44,7 +45,8 @@ struct http_message {
   str method;
   str path;
   uint status;
+  str incipit;
+  str body;
   struct http_headers headers;
-  struct http_body body;
   struct allocator* allocator;
 };

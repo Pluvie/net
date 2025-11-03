@@ -1,18 +1,19 @@
-int socket_receive (
+enum result socket_receive (
     struct socket* sock,
-    uint length,
     void* data,
-    int flags
+    uint length,
+    int* received_bytes_ptr
 )
 {
 #if platform(LINUX)
-  int result = recv(sock->descriptor, data, length, flags);
-  if (unlikely(result == -1)) {
-    fail("socket receive failure");
-    return -1;
-  }
+  int received_bytes = recv(sock->descriptor, data, length, sock->flags);
+  if (unlikely(received_bytes == -1))
+    return fail("socket receive failure");
 
-  return result;
+  if (received_bytes_ptr != nullptr)
+    *received_bytes_ptr = received_bytes;
+
+  return Success;
 
 #elif platform(WINDOWS)
   /* To do. */

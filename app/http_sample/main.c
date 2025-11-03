@@ -7,31 +7,39 @@ void get (
 )
 {
   int error;
+  uint index;
 
   { /* Firing off the request. */
     struct http_message request = { str("GET"), str("/") };
     struct http_header headers[] = {
       { str("User-Agent"), str("libnet") },
     };
+
     request.headers = http_headers_alloc(16, allocator);
-    http_message_set_headers(&request, headers, countof(headers));
+    for (index = 0; index < countof(headers); index++)
+      http_headers_set(&(request.headers), headers[index].name, headers[index].value);
+
+    error = http_send(client, &request, allocator);
+    if (unlikely(error)) {
+      print_failure("Failed to send HTTP request");
+      return;
+    }
 
     printl("");
     printl(">>>>>>>");
-    printl("Sending request:");
+    printl("Sent request:");
     http_message_print(&request);
 
-    error = http_send(client, &request, allocator);
-    if (unlikely(error))
-      return;
   }
 
   { /* Receiving the response. */
     struct http_message response = { 0 };
 
     error = http_receive(client, &response, allocator);
-    if (unlikely(error))
+    if (unlikely(error)) {
+      print_failure("Failed to receive HTTP request");
       return;
+    }
 
     printl("");
     printl("<<<<<<<");
