@@ -11,6 +11,7 @@ enum result http_send (
   if (unlikely(result == Failure))
     return Failure;
 
+
   result = socket_send(&(http->socket), message->incipit.chars, message->incipit.length, 0);
   if (unlikely(result == Failure))
     return Failure;

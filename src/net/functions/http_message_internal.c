@@ -80,7 +80,7 @@ static enum result http_message_incipit_build (
 
   incipit_begin = allocator_push(allocator, incipit_length);
   incipit->chars = incipit_begin;
-  incipit->length = 0;
+  incipit->length = incipit_length;
 
   /* Begins the line section. */
   str_append(incipit, message->method);

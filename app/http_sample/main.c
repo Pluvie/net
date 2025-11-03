@@ -6,8 +6,7 @@ void get (
     struct allocator* allocator
 )
 {
-  int error;
-  uint index;
+  enum result result;
 
   { /* Firing off the request. */
     struct http_message request = { str("GET"), str("/") };
@@ -16,27 +15,28 @@ void get (
     };
 
     request.headers = http_headers_alloc(16, allocator);
-    for (index = 0; index < countof(headers); index++)
+    { uint index; for (index = 0; index < countof(headers); index++)
       http_headers_set(&(request.headers), headers[index].name, headers[index].value);
-
-    error = http_send(client, &request, allocator);
-    if (unlikely(error)) {
-      print_failure("Failed to send HTTP request");
-      return;
     }
 
     printl("");
     printl(">>>>>>>");
-    printl("Sent request:");
+    printl("Sending request:");
     http_message_print(&request);
+
+    result = http_send(client, &request, allocator);
+    if (unlikely(result != Success)) {
+      print_failure("Failed to send HTTP request");
+      return;
+    }
 
   }
 
   { /* Receiving the response. */
     struct http_message response = { 0 };
 
-    error = http_receive(client, &response, allocator);
-    if (unlikely(error)) {
+    result = http_receive(client, &response, allocator);
+    if (unlikely(result != Success)) {
       print_failure("Failed to receive HTTP request");
       return;
     }
@@ -118,13 +118,13 @@ int_t main (
     cstr* argv
 )
 {
-  int error;
+  enum result result;
   struct http client = { 0 };
   struct allocator allocator = allocator_init(0);
   str host = str("echo.free.beeceptor.com");
 
-  error = http_client_start(&client, host);
-  if (unlikely(error)) {
+  result = http_client_start(&client, host);
+  if (unlikely(result == Failure)) {
     print_failure("HTTP client failed");
     return EXIT_FAILURE;
   }
