@@ -109,6 +109,6 @@ resolve_address:
 initialize_descriptor:
   sock->descriptor = socket(sock->family, sock->protocol, 0);
   if (unlikely(sock->descriptor < 0))
-    return fail("socket internal failure");
+    return fail_with_errno("socket initialization failure");
 
-  return Success;
+  return succeed();

@@ -1,4 +1,4 @@
-static enum result http_message_incipit_length (
+static struct result http_message_incipit_length (
     struct http_message* message,
     str host,
     uint* result
@@ -60,23 +60,23 @@ static enum result http_message_incipit_length (
   length += http_chunks.crlf.length;
   *result = length;
 
-  return Success;
+  return succeed();
 }
 
-static enum result http_message_incipit_build (
+static struct result http_message_incipit_build (
     struct http_message* message,
     str host,
     struct allocator* allocator
 )
 {
-  enum result result;
+  struct result result;
   str* incipit = &(message->incipit);
   uint incipit_length;
   char* incipit_begin;
 
   result = http_message_incipit_length(message, host, &incipit_length);
-  if (unlikely(result == Failure))
-    return Failure;
+  if (unlikely(result.failure))
+    return result;
 
   incipit_begin = allocator_push(allocator, incipit_length);
   incipit->chars = incipit_begin;
@@ -131,5 +131,5 @@ static enum result http_message_incipit_build (
   incipit->chars = incipit_begin;
   incipit->length = incipit_length;
 
-  return Success;
+  return succeed();
 }

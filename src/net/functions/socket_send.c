@@ -1,4 +1,4 @@
-enum result socket_send (
+struct result socket_send (
     struct socket* sock,
     void* data,
     uint length,
@@ -13,7 +13,7 @@ enum result socket_send (
   if (sent_bytes_ptr != nullptr)
     *sent_bytes_ptr = sent_bytes;
 
-  return Success;
+  return succeed();
 
 #elif platform(WINDOWS)
   /* To do. */

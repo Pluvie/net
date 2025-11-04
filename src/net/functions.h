@@ -6,12 +6,12 @@
 
 /* SOCKET APIs */
 Attribute__No_Discard
-enum result socket_client_start (
+struct result socket_client_start (
     struct socket* sock
 );
 
 Attribute__No_Discard
-enum result socket_server_start (
+struct result socket_server_start (
     struct socket* sock
 );
 
@@ -19,16 +19,23 @@ void socket_close (
     struct socket* sock
 );
 
+struct result socket_peek (
+    struct socket* sock,
+    void* data,
+    uint length,
+    int* peeked_bytes_ptr
+);
+
 /* TCP APIs */
 Attribute__No_Discard
-enum result tcp_client_start (
+struct result tcp_client_start (
     struct tcp* client,
     str address,
     int port
 );
 
 Attribute__No_Discard
-enum result tcp_server_start (
+struct result tcp_server_start (
     struct tcp* server,
     str address,
     int port
@@ -36,13 +43,13 @@ enum result tcp_server_start (
 
 /* HTTP APIs */
 Attribute__No_Discard
-enum result http_client_start (
+struct result http_client_start (
     struct http* client,
     str host
 );
 
 Attribute__No_Discard
-enum result http_server_start (
+struct result http_server_start (
     struct http* server,
     str host
 );

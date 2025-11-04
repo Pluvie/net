@@ -1,27 +1,27 @@
 #include "http_message_internal.c"
 
-enum result http_send (
+struct result http_send (
     struct http* http,
     struct http_message* message,
     struct allocator* allocator
 )
 {
-  enum result result;
+  struct result result;
   result = http_message_incipit_build(message, http->host, allocator);
-  if (unlikely(result == Failure))
-    return Failure;
+  if (unlikely(result.failure))
+    return result;
 
 
   result = socket_send(&(http->socket), message->incipit.chars, message->incipit.length, 0);
-  if (unlikely(result == Failure))
-    return Failure;
+  if (unlikely(result.failure))
+    return result;
 
   if (str_empty(message->body))
-    return Success;
+    return succeed();
 
   result = socket_send(&(http->socket), message->body.chars, message->body.length, 0);
-  if (unlikely(result == Failure))
-    return Failure;
+  if (unlikely(result.failure))
+    return result;
 
-  return Success;
+  return succeed();
 }

@@ -1,4 +1,4 @@
-enum result socket_receive (
+struct result socket_receive (
     struct socket* sock,
     void* data,
     uint length,
@@ -10,10 +10,14 @@ enum result socket_receive (
   if (unlikely(received_bytes == -1))
     return fail("socket receive failure");
 
+  printl("-----------------------");
+  printl("Received: [%"fmt(UINT)"]", length);
+  print_hex(data, length);
+  printl("-----------------------");
   if (received_bytes_ptr != nullptr)
     *received_bytes_ptr = received_bytes;
 
-  return Success;
+  return succeed();
 
 #elif platform(WINDOWS)
   /* To do. */

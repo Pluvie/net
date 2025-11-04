@@ -1,12 +1,12 @@
 #include <net.h>
 #include <net.c>
 
-void get (
+struct result get (
     struct http* client,
     struct allocator* allocator
 )
 {
-  enum result result;
+  struct result result;
 
   { /* Firing off the request. */
     struct http_message request = { str("GET"), str("/") };
@@ -25,10 +25,8 @@ void get (
     http_message_print(&request);
 
     result = http_send(client, &request, allocator);
-    if (unlikely(result != Success)) {
-      print_failure("Failed to send HTTP request");
-      return;
-    }
+    if (unlikely(result.failure))
+      return print_failure("Failed to send HTTP request", &result);
 
   }
 
@@ -36,19 +34,19 @@ void get (
     struct http_message response = { 0 };
 
     result = http_receive(client, &response, allocator);
-    if (unlikely(result != Success)) {
-      print_failure("Failed to receive HTTP request");
-      return;
-    }
+    if (unlikely(result.failure))
+      return print_failure("Failed to receive HTTP request", &result);
 
     printl("");
     printl("<<<<<<<");
     printl("Received response:");
     http_message_print(&response);
   }
+
+  return succeed();
 }
 
-void post (
+struct result post (
     struct http* client,
     struct allocator* allocator
 )
@@ -111,6 +109,8 @@ void post (
   //printl("<<<<<<<");
   //http_message_print(&post_request);
   */
+
+  return succeed();
 }
 
 int_t main (
@@ -118,20 +118,28 @@ int_t main (
     cstr* argv
 )
 {
-  enum result result;
+  struct result result;
   struct http client = { 0 };
   struct allocator allocator = allocator_init(0);
   str host = str("echo.free.beeceptor.com");
 
   result = http_client_start(&client, host);
-  if (unlikely(result == Failure)) {
-    print_failure("HTTP client failed");
+  if (unlikely(result.failure)) {
+    print_failure("HTTP client failed", &result);
     return EXIT_FAILURE;
   }
 
-  get(&client, &allocator);
-  /*post(&client, &allocator);*/
+  result = get(&client, &allocator);
+  if (unlikely(result.failure))
+    goto close;
 
+  /*
+  result = post(&client, &allocator);
+  if (unlikely(result.failure))
+    goto close;
+  */
+
+close:
   allocator_release(&allocator);
   http_close(&client);
   return EXIT_SUCCESS;

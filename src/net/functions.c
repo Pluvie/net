@@ -5,33 +5,37 @@
 #include "functions/socket_send.c"
 
 /* SOCKET APIs */
-enum result socket_client_start (
+struct result socket_client_start (
     struct socket* sock
 )
 {
 #if platform(LINUX)
-  enum result result;
+  int_t connect_result;
 
   switch (sock->family) {
   case AF_INET: {
-    result = connect(sock->descriptor, &(sock->address.ipv4), sizeof(sock->address.ipv4));
-    if (unlikely(result == -1))
-      return fail("socket connection failure");
-    break;
+    connect_result = connect(
+      sock->descriptor, &(sock->address.ipv4), sizeof(sock->address.ipv4));
+    if (unlikely(connect_result == -1))
+      return fail_with_errno("socket connection failure");
+    else
+      return succeed();
   }
 
   case AF_INET6: {
-    result = connect(sock->descriptor, &(sock->address.ipv6), sizeof(sock->address.ipv6));
-    if (unlikely(result == -1))
-      return fail("socket connection failure");
-    break;
+    connect_result = connect(
+      sock->descriptor, &(sock->address.ipv6), sizeof(sock->address.ipv6));
+    if (unlikely(connect_result == -1))
+      return fail_with_errno("socket connection failure");
+    else
+      return succeed();
   }
 
   default:
-    return fail("unsupported socket type");
+    break;
   }
 
-  return Success;
+  return fail("unsupported socket type");
 
 #elif platform(WINDOWS)
   /* To do. */
@@ -39,11 +43,9 @@ enum result socket_client_start (
 #endif
 }
 
-enum result socket_server_start (
+struct result socket_server_start (
     struct socket* sock
 );
-
-
 
 void socket_close (
     struct socket* sock
@@ -52,55 +54,77 @@ void socket_close (
   close(sock->descriptor);
 }
 
+struct result socket_peek (
+    struct socket* sock,
+    void* data,
+    uint length,
+    int* peeked_bytes_ptr
+)
+{
+  struct result result;
+
+#if platform(LINUX)
+  sock->flags |= MSG_PEEK;
+  result = socket_receive(sock, data, length, peeked_bytes_ptr);
+  sock->flags &= ~MSG_PEEK;
+  return result;
+
+#elif platform(WINDOWS)
+  /* To do. */
+
+#endif
+}
+
+
 /* TCP APIs */
-enum result tcp_client_start (
+struct result tcp_client_start (
     struct tcp* client,
     str host,
     int port
 )
 {
-  enum result result;
+  struct result result;
   memory_set(client, 0, sizeof(*client));
 
   result = socket_init(&(client->socket), host, port, SOCK_STREAM);
-  if (unlikely(result == Failure))
-    return Failure;
+  if (unlikely(result.failure))
+    return result;
 
   result = socket_client_start(&(client->socket));
-  if (unlikely(result == Failure))
-    return Failure;
+  if (unlikely(result.failure))
+    return result;
 
-  return Success;
+  return succeed();
 }
 
-enum result tcp_server_start (
+struct result tcp_server_start (
     struct tcp* server,
     str host,
     int port
 );
 
 /* HTTP APIs */
-enum result http_client_start (
+struct result http_client_start (
     struct http* client,
     str host
 )
 {
-  enum result result;
+  struct result result;
   memory_set(client, 0, sizeof(*client));
   client->host = host;
 
   result = socket_init(&(client->socket), host, 80, SOCK_STREAM);
-  if (unlikely(result == Failure))
-    return Failure;
+  if (unlikely(result.failure))
+    return result;
 
   result = socket_client_start(&(client->socket));
-  if (unlikely(result == Failure))
-    return Failure;
+  if (unlikely(result.failure))
+    return result;
 
-  return Success;
+  return succeed();
 }
 
-enum result http_server_start (
+struct result http_server_start (
     struct http* client,
     str host
 );

@@ -1,5 +1,9 @@
-#define HTTP_BUFFER_LENGTH        8192
-#define HTTP_PATH_MAXLEN          8192
-#define HTTP_METHOD_MAXLEN        64
+#define HTTP_CHUNK_MINSIZE        16
 #define HTTP_HEADER_NAME_MAXLEN   128
 #define HTTP_HEADER_VALUE_MAXLEN  8192
+#define HTTP_INCIPIT_MAXLEN       1024*1024
+#define HTTP_METHOD_MAXLEN        32
+#define HTTP_PATH_MAXLEN          8192
+#define HTTP_REASON_MAXLEN        128
+#define HTTP_STATUS_MAXLEN        3
+#define HTTP_VERSION_MAXLEN       32
