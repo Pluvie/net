@@ -1,5 +1,3 @@
-#include "http_message_internal.c"
-
 struct result http_send (
     struct http* http,
     struct http_message* message,

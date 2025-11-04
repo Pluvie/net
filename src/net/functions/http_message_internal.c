@@ -1,3 +1,78 @@
+bool str_starts (
+    str source,
+    str target
+)
+{
+  return memory_equal(source.chars, target.chars, target.length);
+}
+
+int str_index (
+    str source,
+    str target
+)
+{
+  int index = 0;
+
+  do {
+    if (target.length > source.length)
+      return -1;
+
+    if (str_starts(source, target))
+      return index;
+
+    if (source.length > 0) {
+      source.chars++;
+      source.length--;
+      index++;
+    }
+  } while (source.length > 0);
+
+  return -1;
+}
+
+bool str_contains (
+    str source,
+    str target
+)
+{
+  return str_index(source, target) >= 0;
+}
+
+bool str_split (
+    str source,
+    str target,
+    str* token,
+    struct iterator* iter
+)
+{
+  int index;
+
+  if (!iter->initialized) {
+    /* Unsigned integer overflow is well defined behaviour. When the first key of
+      the map will be found, this index shall be incremented by 1, wrapping to 0.
+      See: https://en.wikipedia.org/wiki/Integer_overflow */
+    iter->index = (uint) -1;
+    iter->initialized = true;
+  }
+
+  if (iter->position > source.length)
+    return false;
+
+  token->chars = source.chars + iter->position;
+  token->length = source.length - iter->position;
+
+  index = str_index(*token, target);
+  if (index == -1)
+    return false;
+
+  if (index > 0)
+    iter->index++;
+
+  token->length = index;
+  iter->position += index + target.length;
+  return true;
+}
+
 static struct result http_message_incipit_length (
     struct http_message* message,
     str host,
@@ -130,6 +205,35 @@ static struct result http_message_incipit_build (
   str_append(incipit, http_chunks.crlf);
   incipit->chars = incipit_begin;
   incipit->length = incipit_length;
+
+  return succeed();
+}
+
+static struct result http_message_incipit_decode (
+    struct http_message* message,
+    struct allocator* allocator
+)
+{
+  str line;
+  line.chars = message->incipit.chars;
+  line.length = str_index(message->incipit, http_chunks.crlf);
+  line = str_strip(line);
+
+  { str chunk = { 0 }; struct iterator iter = { 0 };
+    while (str_split(message->incipit, http_chunks.space, &chunk, &iter)) {
+      if (chunk.length == 0) continue;
+      switch (iter.index) {
+      case 0:
+        message->protocol = chunk;
+        printl("Protocol: |%"fmt(STR)"|", str_fmt(chunk));
+        break;
+      case 1:
+        /*message->status = chunk;*/
+        printl("Status: |%"fmt(STR)"|", str_fmt(chunk));
+        break;
+      }
+    }
+  }
 
   return succeed();
 }

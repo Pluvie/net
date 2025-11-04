@@ -44,6 +44,7 @@ struct http_body {
 struct http_message {
   str method;
   str path;
+  str protocol;
   uint status;
   str incipit;
   str body;

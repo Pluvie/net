@@ -1,86 +1,17 @@
-bool str_starts (
-    str source,
-    str target
-)
-{
-  return memory_equal(source.chars, target.chars, target.length);
-}
-
-int str_index (
-    str source,
-    str target
-)
-{
-  int index = 0;
-
-  do {
-    if (target.length > source.length)
-      return -1;
-
-    if (str_starts(source, target))
-      return index;
-
-    if (source.length > 0) {
-      source.chars++;
-      source.length--;
-      index++;
-    }
-  } while (source.length > 0);
-
-  return -1;
-}
-
-bool str_contains (
-    str source,
-    str target
-)
-{
-  return str_index(source, target) >= 0;
-}
-
-bool str_split (
-    str source,
-    str target,
-    str* token,
-    struct iterator* iter
-)
-{
-  int index;
-
-  if (!iter->initialized) {
-    /* Unsigned integer overflow is well defined behaviour. When the first key of
-      the map will be found, this index shall be incremented by 1, wrapping to 0.
-      See: https://en.wikipedia.org/wiki/Integer_overflow */
-    iter->index = (uint) -1;
-    iter->initialized = true;
-  }
-
-  if (iter->position > source.length)
-    return false;
-
-  token->chars = source.chars + iter->position;
-  token->length = source.length - iter->position;
-
-  index = str_index(*token, target);
-  if (index == -1)
-    return false;
-
-  token->length = index;
-  iter->position += index + target.length;
-  iter->index++;
-  return true;
-}
-
 static struct result http_receive_incipit (
     struct http* http,
-    struct allocator* allocator,
-    str* incipit
+    struct http_message* message,
+    struct allocator* allocator
 )
 {
   struct result result;
+  str* incipit = &(message->incipit);
+
   str data, search;
   int index, bytes_to_receive;
   uint allocator_initial_position = allocator->line.position;
+
+  incipit->length = 0;
 
 receive_chunk:
   if (incipit->length > HTTP_INCIPIT_MAXLEN)
@@ -103,7 +34,7 @@ receive_chunk:
 
   index = str_index(search, http_chunks.terminator);
   if (index >= 0) {
-    bytes_to_receive = index - (search.length - data.length);
+    bytes_to_receive = index - (search.length - data.length) + http_chunks.terminator.length;
     result = socket_receive(&(http->socket), data.chars, bytes_to_receive, nullptr);
     if (unlikely(result.failure))
       return result;
@@ -130,19 +61,18 @@ struct result http_receive (
 )
 {
   struct result result;
-  str incipit = { 0 };
 
-  result = http_receive_incipit(http, allocator, &incipit);
+  result = http_receive_incipit(http, message, allocator);
   if (unlikely(result.failure))
     return result;
 
-  { str chunk = { 0 }; struct iterator iter = { 0 };
-    while (str_split(incipit, http_chunks.crlf, &chunk, &iter)) {
-      printl("Chunk: %"fmt(STR), str_fmt(chunk));
-    }
-  }
+  result = http_message_incipit_decode(message, allocator);
+  if (unlikely(result.failure))
+    return result;
+
+  printl("");
   printl("Incipit:");
-  printl("%"fmt(STR), str_fmt(incipit));
+  printl("%"fmt(STR), str_fmt(message->incipit));
   /*
   result = socket_parser_init(&parser, &(http->socket), allocator);
   if (unlikely(result.failure))

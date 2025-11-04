@@ -1,3 +1,5 @@
+#include "functions/http_message_internal.c"
+
 #include "functions/http_receive.c"
 #include "functions/http_send.c"
 #include "functions/socket_init.c"
