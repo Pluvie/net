@@ -70,45 +70,5 @@ struct result http_receive (
   if (unlikely(result.failure))
     return result;
 
-  printl("");
-  printl("Incipit:");
-  printl("%"fmt(STR), str_fmt(message->incipit));
-  /*
-  result = socket_parser_init(&parser, &(http->socket), allocator);
-  if (unlikely(result.failure))
-    return result;
-
-  parser_result = socket_parser_until(&parser, http_chunks.space, HTTP_VERSION_MAXLEN);
-  if (!str_equal(parser_result, http_chunks.version_1_1))
-    return fail("expected HTTP version");
-  printl("HTTP version: %"fmt(STR), str_fmt(parser_result));
-
-  parser_result = socket_parser_until(&parser, http_chunks.space, HTTP_STATUS_MAXLEN);
-  if (parser_result.length != 3)
-    return fail("expected HTTP status code");
-
-  result = str_to_int(&parser_result, (int*) &(message->status));
-  if (unlikely(result.failure))
-    return result;
-  printl("HTTP status: %"fmt(INT), message->status);
-
-  parser_result = socket_parser_until(&parser, http_chunks.crlf, HTTP_REASON_MAXLEN);
-  if (parser_result.length == 0)
-    return fail("expected CRLF after HTTP status description");
-
-  message->headers = http_headers_alloc(16, allocator);
-
-parse_header:
-  parser_result = socket_parser_until(&parser, http_chunks.colon, HTTP_HEADER_NAME_MAXLEN);
-  if (parser_result.length == 0)
-    return fail("expected colon after HTTP header name");
-  header.name = parser_result;
-
-  parser_result = socket_parser_until(&parser, http_chunks.crlf, HTTP_HEADER_VALUE_MAXLEN);
-  if (parser_result.length == 0)
-    return fail("expected CRLF after HTTP header value");
-  header.value = parser_result;
-  http_headers_set(&(message->headers), header.name, header.value);*/
-
   return succeed();
 }

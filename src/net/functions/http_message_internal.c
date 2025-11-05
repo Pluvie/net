@@ -73,6 +73,50 @@ bool str_split (
   return true;
 }
 
+str str_sub (
+    str source,
+    int index_start,
+    int index_end
+)
+{
+  str result = { 0 };
+  char* end_ptr;
+
+  if (unlikely(index_start < 0))
+    index_start = 0;
+
+  if (index_end < 0)
+    index_end = source.length + (index_end + 1);
+
+  if (index_start >= index_end)
+    return result;
+
+  end_ptr = source.chars + index_end;
+  result.chars = source.chars + index_start;
+  result.length = end_ptr - source.chars - index_start;
+  return result;
+}
+
+int str_partition (
+    str source,
+    str separator,
+    str* left,
+    str* right
+)
+{
+  int index = str_index(source, separator);
+  if (index == -1)
+    return index;
+
+  left->chars = source.chars;
+  left->length = index;
+
+  right->chars = source.chars + index + separator.length;
+  right->length = source.length - index - separator.length;
+
+  return index;
+}
+
 static struct result http_message_incipit_length (
     struct http_message* message,
     str host,
@@ -214,24 +258,67 @@ static struct result http_message_incipit_decode (
     struct allocator* allocator
 )
 {
+  struct result result;
   str line;
+  str headers;
+
   line.chars = message->incipit.chars;
   line.length = str_index(message->incipit, http_chunks.crlf);
   line = str_strip(line);
 
-  { str chunk = { 0 }; struct iterator iter = { 0 };
-    while (str_split(message->incipit, http_chunks.space, &chunk, &iter)) {
+  { /* Splitting the line section (e.g. `HTTP/1.1 200 OK`) by space, which separates the
+      version (`HTTP/1.1`), the status (`200`), and the reason phrase (`OK`). */
+    str chunk = { 0 }; struct iterator iter = { 0 };
+    while (str_split(line, http_chunks.space, &chunk, &iter)) {
       if (chunk.length == 0) continue;
       switch (iter.index) {
       case 0:
+        /* Protocol version. */
         message->protocol = chunk;
-        printl("Protocol: |%"fmt(STR)"|", str_fmt(chunk));
         break;
       case 1:
-        /*message->status = chunk;*/
-        printl("Status: |%"fmt(STR)"|", str_fmt(chunk));
+        /* Status code. */
+        result = str_to_int(&chunk, (int*) &(message->status));
+        if (unlikely(result.failure))
+          return result;
+        break;
+      default:
+        /* All other values are discarded, including the reason phrase. This is
+          recommended by the [HTTP RFC 7230 section 3.1.2](
+          https://datatracker.ietf.org/doc/html/rfc7230#section-3.1.2):
+
+          > The reason-phrase element exists for the sole purpose of providing a
+          > textual description associated with the numeric status code, mostly
+          > out of deference to earlier Internet application protocols that were
+          > more frequently used with interactive text clients.  A client SHOULD
+          > ignore the reason-phrase content. */
         break;
       }
+    }
+  }
+
+  print_hex(message->incipit.chars, message->incipit.length);
+  headers = str_sub(message->incipit, line.length + http_chunks.crlf.length, -1);
+  printl("HEADERS-------- %"fmt(UINT)"|%"fmt(UINT), headers.length, message->incipit.length);
+  print_hex(headers.chars, headers.length);
+  message->headers = http_headers_alloc(16, allocator);
+
+  { /* Splitting the headers section (e.g. `Content-Type: text/plain`) by crlf, which
+      separates each header line.. */
+    str header = { 0 }; str name = { 0 }; str value = { 0 };
+    int index; struct iterator iter = { 0 };
+
+    while (str_split(headers, http_chunks.crlf, &header, &iter)) {
+      if (header.length == 0) continue;
+
+      index = str_partition(header, http_chunks.colon, &name, &value);
+      printl("Header: %"fmt(STR), str_fmt(header));
+      printl("|%"fmt(STR)"|", str_fmt(name));
+      printl("|%"fmt(STR)"|", str_fmt(value));
+      if (unlikely(index == -1))
+        return fail("invalid header");
+
+      http_headers_set(&(message->headers), name, value);
     }
   }
 
