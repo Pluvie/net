@@ -297,10 +297,7 @@ static struct result http_message_incipit_decode (
     }
   }
 
-  print_hex(message->incipit.chars, message->incipit.length);
   headers = str_sub(message->incipit, line.length + http_chunks.crlf.length, -1);
-  printl("HEADERS-------- %"fmt(UINT)"|%"fmt(UINT), headers.length, message->incipit.length);
-  print_hex(headers.chars, headers.length);
   message->headers = http_headers_alloc(16, allocator);
 
   { /* Splitting the headers section (e.g. `Content-Type: text/plain`) by crlf, which
@@ -312,13 +309,10 @@ static struct result http_message_incipit_decode (
       if (header.length == 0) continue;
 
       index = str_partition(header, http_chunks.colon, &name, &value);
-      printl("Header: %"fmt(STR), str_fmt(header));
-      printl("|%"fmt(STR)"|", str_fmt(name));
-      printl("|%"fmt(STR)"|", str_fmt(value));
       if (unlikely(index == -1))
         return fail("invalid header");
 
-      http_headers_set(&(message->headers), name, value);
+      http_headers_set(&(message->headers), str_strip(name), str_strip(value));
     }
   }
 

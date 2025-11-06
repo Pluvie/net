@@ -1,1 +1,1 @@
-#include "globals/http_chunks.c"
+#include "globals/http_strings.c"

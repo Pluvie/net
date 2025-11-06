@@ -4,6 +4,7 @@
 #include "functions/http_send.c"
 #include "functions/socket_init.c"
 #include "functions/socket_receive.c"
+#include "functions/socket_receive_all.c"
 #include "functions/socket_send.c"
 
 /* SOCKET APIs */

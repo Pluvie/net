@@ -17,3 +17,11 @@ static struct {
   str("HTTP/2"),
   str("HTTP/3"),
 };
+
+static struct {
+  str content_length;
+  str transfer_encoding;
+} http_headers = {
+  str("Content-Length"),
+  str("Transfer-Encoding"),
+}

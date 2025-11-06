@@ -2,6 +2,7 @@
 #include "functions/http_send.h"
 #include "functions/socket_init.h"
 #include "functions/socket_receive.h"
+#include "functions/socket_receive_all.h"
 #include "functions/socket_send.h"
 
 /* SOCKET APIs */

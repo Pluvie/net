@@ -20,7 +20,8 @@ receive_chunk:
   data.chars = allocator_stretch(allocator, HTTP_CHUNK_MINSIZE);
   data.length = HTTP_CHUNK_MINSIZE;
 
-  result = socket_peek(&(http->socket), data.chars, HTTP_CHUNK_MINSIZE, (int*) &(data.length));
+  result = socket_peek(&(http->socket),
+    data.chars, HTTP_CHUNK_MINSIZE, (int*) &(data.length));
   if (unlikely(result.failure))
     return result;
 
@@ -34,7 +35,8 @@ receive_chunk:
 
   index = str_index(search, http_chunks.terminator);
   if (index >= 0) {
-    bytes_to_receive = index - (search.length - data.length) + http_chunks.terminator.length;
+    bytes_to_receive = index - (search.length - data.length) +
+      http_chunks.terminator.length;
     result = socket_receive(&(http->socket), data.chars, bytes_to_receive, nullptr);
     if (unlikely(result.failure))
       return result;
@@ -54,6 +56,71 @@ receive_chunk:
   return fail("unreachable");
 }
 
+static struct result http_receive_body (
+    struct http* http,
+    struct http_message* message,
+    struct allocator* allocator
+)
+{
+  struct result result;
+
+  if (http_headers_has(&(message->headers), http_headers.content_length))
+    goto receive_body_entirely;
+
+  if (http_headers_has(&(message->headers), http_headers.transfer_encoding)) {
+    str chunked = str("chunked");
+    str* transfer_encoding = http_headers_get(&(message->headers),
+      http_headers.transfer_encoding);
+    if (str_contains(*transfer_encoding, chunked))
+      goto receive_body_chunked;
+  }
+
+  /* No body to receive. */
+  return succeed();
+
+receive_body_entirely: {
+  str* content_length;
+  int content_length_number;
+
+  content_length = http_headers_get(&(message->headers), http_headers.content_length);
+  result = str_to_int(*content_length, &content_length_number);
+  if (unlikely(result.failure))
+    return result;
+
+  message->body.chars = allocator_push(allocator, content_length_number);
+  message->body.length = content_length_number;
+
+  result = socket_receive_all(&(http->socket),
+    message->body.chars, message->body.length);
+  if (unlikely(result.failure))
+    return result;
+
+  return succeed();
+}
+
+receive_body_chunked: {
+  int chunk_size, chunk_size_bytes;
+  char chunk_size_buffer[INT_MAXNUM] = { 0 };
+  result = socket_peek(&(http->socket),
+    chunk_size_buffer, sizeof(chunk_size_buffer), &chunk_size_bytes);
+  if (unlikely(result.failure))
+    return result;
+
+  result = str_to_int(chunk_size_buffer, &chunk_size);
+  if (unlikely(result.failure))
+    return result;
+
+  message->body.chars = allocator_stretch(allocator, chunk_size);
+  message->body.length += chunk_size;
+
+  result = socket_receive_all(&(http->socket),
+    message->body.chars, message->body.length);
+  if (unlikely(result.failure))
+    return result;
+}
+  
+}
+
 struct result http_receive (
     struct http* http,
     struct http_message* message,
@@ -67,6 +134,10 @@ struct result http_receive (
     return result;
 
   result = http_message_incipit_decode(message, allocator);
+  if (unlikely(result.failure))
+    return result;
+
+  result = http_receive_body(http, message, allocator);
   if (unlikely(result.failure))
     return result;
 
