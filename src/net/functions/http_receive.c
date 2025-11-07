@@ -4,56 +4,13 @@ static struct result http_receive_incipit (
     struct allocator* allocator
 )
 {
-  struct result result;
-  str* incipit = &(message->incipit);
+  struct result result = socket_receive_until_str(&(http->socket),
+    http_chunks.terminator, &(message->incipit), HTTP_INCIPIT_MAXLEN, allocator);
 
-  str data, search;
-  int index, bytes_to_receive;
-  uint allocator_initial_position = allocator->line.position;
-
-  incipit->length = 0;
-
-receive_chunk:
-  if (incipit->length > HTTP_INCIPIT_MAXLEN)
-    return fail("did not find an incipit terminator");
-
-  data.chars = allocator_stretch(allocator, HTTP_CHUNK_MINSIZE);
-  data.length = HTTP_CHUNK_MINSIZE;
-
-  result = socket_peek(&(http->socket),
-    data.chars, HTTP_CHUNK_MINSIZE, (int*) &(data.length));
   if (unlikely(result.failure))
-    return result;
+    return fail("HTTP incipit exceeded max configured length");
 
-  if (incipit->length > 0 && data.length >= http_chunks.terminator.length) {
-    search.chars = data.chars - http_chunks.terminator.length;
-    search.length = data.length + http_chunks.terminator.length;
-  } else {
-    search.chars = data.chars;
-    search.length = data.length;
-  }
-
-  index = str_index(search, http_chunks.terminator);
-  if (index >= 0) {
-    bytes_to_receive = index - (search.length - data.length) +
-      http_chunks.terminator.length;
-    result = socket_receive(&(http->socket), data.chars, bytes_to_receive, nullptr);
-    if (unlikely(result.failure))
-      return result;
-
-    incipit->length += bytes_to_receive;
-    incipit->chars = ((char*) allocator->line.data) + allocator_initial_position;
-    return succeed();
-  }
-
-  result = socket_receive(&(http->socket), data.chars, HTTP_CHUNK_MINSIZE, nullptr);
-  if (unlikely(result.failure))
-    return result;
-
-  incipit->length += HTTP_CHUNK_MINSIZE;
-  goto receive_chunk;
-
-  return fail("unreachable");
+  return succeed();
 }
 
 static struct result http_receive_body (
@@ -99,6 +56,30 @@ receive_body_entirely: {
 }
 
 receive_body_chunked: {
+  str chunk_size;
+  int chunk_size_int;
+
+  do {
+    result = socket_receive_until_str(
+      &(http->sock), http_chunks.terminator, &chunk_size, HTTP_CHUNK_SIZE_MAXLEN);
+    if (unlikely(result.failure))
+      return fail("HTTP chunk size exceeded max configured length");
+
+    result = str_to_int(chunk_size, &chunk_size_int);
+    if (unlikely(result.failure))
+      return fail("HTTP chunk size invalid");
+
+    if (chunk_size_int == 0)
+      break;
+    
+  } while (chunk_size_int > 0);
+  /*
+
+  FIGURE OUT HOW TO HANDLE CHUNK DATA ALLOCATION
+
+
+
+
   int chunk_size, chunk_size_bytes;
   char chunk_size_buffer[INT_MAXNUM] = { 0 };
   result = socket_peek(&(http->socket),
@@ -117,6 +98,7 @@ receive_body_chunked: {
     message->body.chars, message->body.length);
   if (unlikely(result.failure))
     return result;
+  */
 }
   
 }

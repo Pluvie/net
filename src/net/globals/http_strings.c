@@ -19,9 +19,11 @@ static struct {
 };
 
 static struct {
+  str host;
   str content_length;
   str transfer_encoding;
 } http_headers = {
+  str("Host"),
   str("Content-Length"),
   str("Transfer-Encoding"),
 }
