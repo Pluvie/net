@@ -5,6 +5,7 @@
 #include "functions/socket_init.c"
 #include "functions/socket_receive.c"
 #include "functions/socket_receive_all.c"
+#include "functions/socket_receive_until_str.c"
 #include "functions/socket_send.c"
 
 /* SOCKET APIs */

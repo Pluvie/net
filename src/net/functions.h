@@ -3,6 +3,7 @@
 #include "functions/socket_init.h"
 #include "functions/socket_receive.h"
 #include "functions/socket_receive_all.h"
+#include "functions/socket_receive_until_str.h"
 #include "functions/socket_send.h"
 
 /* SOCKET APIs */

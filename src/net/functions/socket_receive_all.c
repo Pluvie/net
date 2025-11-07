@@ -7,6 +7,7 @@ struct result socket_receive_all (
 #if platform(LINUX)
   /* For platforms that support the MSG_WAITALL flag this implementation is trivial.
     See: https://man7.org/linux/man-pages/man2/recv.2.html */
+  struct result result;
   sock->flags |= MSG_WAITALL;
   result = socket_receive(sock, data, length, nullptr);
   sock->flags &= ~MSG_WAITALL;
@@ -21,7 +22,6 @@ struct result socket_receive_all (
     byte* data_offset = ((byte*) data) + total_received_bytes;
 
     result = socket_receive(sock, data_offset, remaining_bytes, &received_byes);
-
     if (unlikely(result.failure))
       return result;
 

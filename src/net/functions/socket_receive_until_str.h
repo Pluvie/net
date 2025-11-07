@@ -1,6 +1,7 @@
 struct result socket_receive_until_str (
     struct socket* sock,
-    str* pattern,
+    str terminator,
+    str* output,
     uint max_length,
     struct allocator* allocator
 );

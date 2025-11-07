@@ -7,9 +7,9 @@ struct result socket_receive_until_str (
 )
 {
   struct result result;
-  str data;
+  str data, search;
   int index, bytes_to_receive;
-  uint allocator_initial_position = allocator->line.position;
+  uint allocator_initial_position = allocator_position_get(allocator);
   uint chunk_size = 32 * terminator.length;
 
   output->length = 0;
@@ -42,7 +42,7 @@ receive_chunk:
       return result;
 
     output->length += bytes_to_receive;
-    output->chars = ((char*) allocator->line.data) + allocator_initial_position;
+    output->chars = allocator_position_address(allocator, allocator_initial_position);
     return succeed();
   }
 

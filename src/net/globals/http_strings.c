@@ -26,4 +26,4 @@ static struct {
   str("Host"),
   str("Content-Length"),
   str("Transfer-Encoding"),
-}
+};

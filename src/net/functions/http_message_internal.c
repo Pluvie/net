@@ -124,7 +124,7 @@ static struct result http_message_incipit_encode (
 )
 {
   str* incipit = &(message->incipit);
-  uint incipit_length;
+  uint incipit_length = 0;
   char* incipit_begin;
 
   if (unlikely(message->method.length > HTTP_METHOD_MAXLEN))
@@ -159,7 +159,7 @@ static struct result http_message_incipit_encode (
         return fail("http header value too long");
 
       incipit_length += name->length;
-      incipit_length += HTTP_Table.colon.length;
+      incipit_length += http_chunks.colon.length;
       incipit_length += http_chunks.space.length;
       incipit_length += value->length;
       incipit_length += http_chunks.crlf.length;

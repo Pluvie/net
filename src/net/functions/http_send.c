@@ -5,7 +5,7 @@ struct result http_send (
 )
 {
   struct result result;
-  result = http_message_incipit_build(message, http->host, allocator);
+  result = http_message_incipit_encode(message, http->host, allocator);
   if (unlikely(result.failure))
     return result;
 
