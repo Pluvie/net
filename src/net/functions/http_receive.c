@@ -4,18 +4,18 @@ static struct result http_receive_incipit (
     struct allocator* allocator
 )
 {
-  str incipit_inlined;
-  uint allocator_initial_position = allocator_position_get(allocator);
+  str incipit;
+  struct buffer buffer = buffer_init(0);
 
   struct result result = socket_receive_until_str(&(http->socket),
-    http_chunks.terminator, &incipit_inlined, HTTP_INCIPIT_MAXLEN, allocator);
+    Http.Terminator, &incipit, HTTP_INCIPIT_MAXLEN, &buffer);
   if (unlikely(result.failure))
     return fail("HTTP incipit exceeded max configured length");
 
-  message->incipit.chars = allocator_push(allocator, incipit_inlined.length);
-  message->incipit.length = incipit_inlined.length;
-  memory_copy(message->incipit.chars, incipit_inlined.chars, incipit_inlined.length);
-  allocator_position_set(allocator, allocator_initial_position);
+  message->incipit.chars = allocator_push(allocator, incipit.length);
+  message->incipit.length = incipit.length;
+  memory_copy(message->incipit.chars, incipit.chars, incipit.length);
+  buffer_release(&buffer);
 
   return succeed();
 }
@@ -28,14 +28,12 @@ static struct result http_receive_body (
 {
   struct result result;
 
-  if (http_headers_has(&(message->headers), http_headers.content_length))
+  if (http_headers_has(&(message->headers), Http.Content_Length))
     goto receive_body_entirely;
 
-  if (http_headers_has(&(message->headers), http_headers.transfer_encoding)) {
-    str chunked = str("chunked");
-    str* transfer_encoding = http_headers_get(&(message->headers),
-      http_headers.transfer_encoding);
-    if (str_contains(*transfer_encoding, chunked))
+  if (http_headers_has(&(message->headers), Http.Transfer_Encoding)) {
+    str* transfer_encoding = http_headers_get(&(message->headers), Http.Transfer_Encoding);
+    if (str_contains(*transfer_encoding, Http.Chunked_Transfer))
       goto receive_body_chunked;
   }
 
@@ -46,7 +44,7 @@ receive_body_entirely: {
   str* content_length;
   int content_length_number;
 
-  content_length = http_headers_get(&(message->headers), http_headers.content_length);
+  content_length = http_headers_get(&(message->headers), Http.Content_Length);
   result = str_to_int(content_length, &content_length_number);
   if (unlikely(result.failure))
     return result;
@@ -65,13 +63,12 @@ receive_body_chunked: {
   str chunk_size;
   int chunk_size_int;
   void* chunk_data_address;
-  void* body_inlined_address;
-  uint body_position = allocator_position_get(allocator);
-  uint allocator_initial_position = allocator_position_get(allocator);
+  uint body_buffer_position = 0;
+  struct buffer buffer = buffer_init(0);
 
   do {
     result = socket_receive_until_str(&(http->socket),
-      http_chunks.crlf, &chunk_size, HTTP_CHUNK_SIZE_MAXLEN, allocator);
+      Http.Crlf, &chunk_size, HTTP_CHUNK_SIZE_MAXLEN, &buffer);
     if (unlikely(result.failure))
       return fail("HTTP chunk size exceeded max configured length");
 
@@ -81,10 +78,9 @@ receive_body_chunked: {
       order to be able to correctly parse the number as hexadecimal. [Reference:](
       https://datatracker.ietf.org/doc/html/rfc9112#name-chunked-transfer-coding)
       Example:
-      |  1  4  1 CR LF | ascii  ->  |  0  x  1  4  1 | ascii
+      |  1  4  1 \r \n | ascii  ->  |  0  x  1  4  1 | ascii
       | 31 34 31 0d 0a | bytes  ->  | 30 78 31 34 31 | bytes */
-    memory_move(chunk_size.chars + http_chunks.crlf.length,
-      chunk_size.chars, chunk_size.length);
+    memory_move(chunk_size.chars + Http.Crlf.length, chunk_size.chars, chunk_size.length);
     chunk_size.chars[0] = '0';
     chunk_size.chars[1] = 'x';
 
@@ -92,28 +88,25 @@ receive_body_chunked: {
     if (unlikely(result.failure))
       return fail("HTTP chunk size invalid");
 
-    allocator_position_set(allocator, body_position);
-
+    buffer_position_set(&buffer, body_buffer_position);
     if (chunk_size_int == 0)
       break;
 
-    chunk_data_address = allocator_stretch(
-      allocator, chunk_size_int + http_chunks.crlf.length);
+    chunk_data_address = buffer_push(&buffer, chunk_size_int + Http.Crlf.length);
     result = socket_receive_all(&(http->socket),
-      chunk_data_address, chunk_size_int + http_chunks.crlf.length);
+      chunk_data_address, chunk_size_int + Http.Crlf.length);
     if (unlikely(result.failure))
       return result;
 
-    body_position += chunk_size_int;
-    allocator_shrink(allocator, http_chunks.crlf.length);
+    body_buffer_position += chunk_size_int;
+    buffer_pop(&buffer, Http.Crlf.length);
     
   } while (chunk_size_int > 0);
 
-  body_inlined_address = allocator_position_address(allocator, allocator_initial_position);
-  message->body.length = allocator_position_get(allocator) - allocator_initial_position;
+  message->body.length = buffer_position_get(&buffer);
   message->body.chars = allocator_push(allocator, message->body.length);
-  memory_copy(message->body.chars, body_inlined_address, message->body.length);
-  allocator_shrink(allocator, message->body.length);
+  memory_copy(message->body.chars, buffer_address_at(&buffer, 0), message->body.length);
+  buffer_release(&buffer);
 
   return succeed(); }
 }

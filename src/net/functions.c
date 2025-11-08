@@ -139,10 +139,10 @@ void http_message_print (
 {
   if (str_empty(message->method))
     printl("%"fmt(STR)" %"fmt(INT),
-      str_fmt(http_chunks.version_1_1), message->status);
+      str_fmt(Http.Version_1_1), message->status);
   else
     printl("%"fmt(STR)" %"fmt(STR)" %"fmt(STR),
-      str_fmt(message->method), str_fmt(message->path), str_fmt(http_chunks.version_1_1));
+      str_fmt(message->method), str_fmt(message->path), str_fmt(Http.Version_1_1));
 
   { str* name; str* value; struct iterator iter = { 0 };
     while (http_headers_each(&(message->headers), &iter, &name, &value))

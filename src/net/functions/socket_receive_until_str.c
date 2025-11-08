@@ -3,13 +3,13 @@ struct result socket_receive_until_str (
     str terminator,
     str* output,
     uint max_length,
-    struct allocator* allocator
+    struct buffer* buffer
 )
 {
   struct result result;
   str data, search;
   int index, bytes_to_receive;
-  uint allocator_initial_position = allocator_position_get(allocator);
+  uint buffer_initial_position = buffer_position_get(buffer);
   uint chunk_size = 32 * terminator.length;
 
   output->length = 0;
@@ -18,7 +18,7 @@ receive_chunk:
   if (output->length > max_length)
     goto max_length_overflow;
 
-  data.chars = allocator_stretch(allocator, chunk_size);
+  data.chars = buffer_push(buffer, chunk_size);
   data.length = chunk_size;
 
   result = socket_peek(sock, data.chars, chunk_size, (int*) &(data.length));
@@ -42,7 +42,7 @@ receive_chunk:
       return result;
 
     output->length += bytes_to_receive;
-    output->chars = allocator_position_address(allocator, allocator_initial_position);
+    output->chars = buffer_address_at(buffer, buffer_initial_position);
     return succeed();
   }
 

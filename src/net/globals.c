@@ -1,1 +1,1 @@
-#include "globals/http_strings.c"
+#include "globals/http.c"

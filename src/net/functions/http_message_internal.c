@@ -135,19 +135,19 @@ static struct result http_message_incipit_encode (
 
   /* Begins the line section. */
   incipit_length += message->method.length;
-  incipit_length += http_chunks.space.length;
+  incipit_length += Http.Space.length;
   incipit_length += message->path.length;
-  incipit_length += http_chunks.space.length;
-  incipit_length += http_chunks.version_1_1.length;
-  incipit_length += http_chunks.crlf.length;
+  incipit_length += Http.Space.length;
+  incipit_length += Http.Version_1_1.length;
+  incipit_length += Http.Crlf.length;
 
   /* Line section is terminated. Begins the headers section. Starts by adding the only
     mandatory HTTP header: Host. */
-  incipit_length += http_headers.host.length;
-  incipit_length += http_chunks.colon.length;
-  incipit_length += http_chunks.space.length;
+  incipit_length += Http.Host.length;
+  incipit_length += Http.Colon.length;
+  incipit_length += Http.Space.length;
   incipit_length += host.length;
-  incipit_length += http_chunks.crlf.length;
+  incipit_length += Http.Crlf.length;
 
   { /* Add the HTTP headers. */
     str* name; str* value; struct iterator iter = { 0 };
@@ -159,10 +159,10 @@ static struct result http_message_incipit_encode (
         return fail("http header value too long");
 
       incipit_length += name->length;
-      incipit_length += http_chunks.colon.length;
-      incipit_length += http_chunks.space.length;
+      incipit_length += Http.Colon.length;
+      incipit_length += Http.Space.length;
       incipit_length += value->length;
-      incipit_length += http_chunks.crlf.length;
+      incipit_length += Http.Crlf.length;
     }
   }
 
@@ -171,14 +171,14 @@ static struct result http_message_incipit_encode (
     char buffer[INT_MAXCHARS] = { 0 };
     int buffer_length = sprintf(buffer, "%"fmt(UINT), message->body.length);
     incipit_length += sizeof("Content-Length") - 1;
-    incipit_length += http_chunks.colon.length;
-    incipit_length += http_chunks.space.length;
+    incipit_length += Http.Colon.length;
+    incipit_length += Http.Space.length;
     incipit_length += buffer_length;
-    incipit_length += http_chunks.crlf.length;
+    incipit_length += Http.Crlf.length;
   }
 
   /* Terminates the headers section. */
-  incipit_length += http_chunks.crlf.length;
+  incipit_length += Http.Crlf.length;
 
   incipit_begin = allocator_push(allocator, incipit_length);
   incipit->chars = incipit_begin;
@@ -186,28 +186,28 @@ static struct result http_message_incipit_encode (
 
   /* Begins the line section. */
   str_append(incipit, message->method);
-  str_append(incipit, http_chunks.space);
+  str_append(incipit, Http.Space);
   str_append(incipit, message->path);
-  str_append(incipit, http_chunks.space);
-  str_append(incipit, http_chunks.version_1_1);
-  str_append(incipit, http_chunks.crlf);
+  str_append(incipit, Http.Space);
+  str_append(incipit, Http.Version_1_1);
+  str_append(incipit, Http.Crlf);
 
   /* Line section is terminated. Begins the headers section. Starts by adding the only
       mandatory HTTP header: Host. */
-  str_append(incipit, http_headers.host);
-  str_append(incipit, http_chunks.colon);
-  str_append(incipit, http_chunks.space);
+  str_append(incipit, Http.Host);
+  str_append(incipit, Http.Colon);
+  str_append(incipit, Http.Space);
   str_append(incipit, host);
-  str_append(incipit, http_chunks.crlf);
+  str_append(incipit, Http.Crlf);
 
   { /* Add the HTTP headers. */
     str* key; str* value; struct iterator iter = { 0 };
     while (http_headers_each(&(message->headers), &iter, &key, &value)) {
       str_append(incipit, *key);
-      str_append(incipit, http_chunks.colon);
-      str_append(incipit, http_chunks.space);
+      str_append(incipit, Http.Colon);
+      str_append(incipit, Http.Space);
       str_append(incipit, *value);
-      str_append(incipit, http_chunks.crlf);
+      str_append(incipit, Http.Crlf);
     }
   }
 
@@ -220,14 +220,14 @@ static struct result http_message_incipit_encode (
     content_length_header_value.chars = buffer;
     content_length_header_value.length = buffer_length;
     str_append(incipit, content_length_header_name);
-    str_append(incipit, http_chunks.colon);
-    str_append(incipit, http_chunks.space);
+    str_append(incipit, Http.Colon);
+    str_append(incipit, Http.Space);
     str_append(incipit, content_length_header_value);
-    str_append(incipit, http_chunks.crlf);
+    str_append(incipit, Http.Crlf);
   }
 
   /* Terminates the headers section. */
-  str_append(incipit, http_chunks.crlf);
+  str_append(incipit, Http.Crlf);
   incipit->chars = incipit_begin;
   incipit->length = incipit_length;
 
@@ -244,13 +244,13 @@ static struct result http_message_incipit_decode (
   str headers;
 
   line.chars = message->incipit.chars;
-  line.length = str_index(message->incipit, http_chunks.crlf);
+  line.length = str_index(message->incipit, Http.Crlf);
   line = str_strip(line);
 
   { /* Splitting the line section (e.g. `HTTP/1.1 200 OK`) by space, which separates the
       version (`HTTP/1.1`), the status (`200`), and the reason phrase (`OK`). */
     str chunk = { 0 }; struct iterator iter = { 0 };
-    while (str_split(line, http_chunks.space, &chunk, &iter)) {
+    while (str_split(line, Http.Space, &chunk, &iter)) {
       if (chunk.length == 0) continue;
       switch (iter.index) {
       case 0:
@@ -278,7 +278,7 @@ static struct result http_message_incipit_decode (
     }
   }
 
-  headers = str_sub(message->incipit, line.length + http_chunks.crlf.length, -1);
+  headers = str_sub(message->incipit, line.length + Http.Crlf.length, -1);
   message->headers = http_headers_alloc(16, allocator);
 
   { /* Splitting the headers section (e.g. `Content-Type: text/plain`) by crlf, which
@@ -286,10 +286,10 @@ static struct result http_message_incipit_decode (
     str header = { 0 }; str name = { 0 }; str value = { 0 };
     int index; struct iterator iter = { 0 };
 
-    while (str_split(headers, http_chunks.crlf, &header, &iter)) {
+    while (str_split(headers, Http.Crlf, &header, &iter)) {
       if (header.length == 0) continue;
 
-      index = str_partition(header, http_chunks.colon, &name, &value);
+      index = str_partition(header, Http.Colon, &name, &value);
       if (unlikely(index == -1))
         return fail("invalid header");
 

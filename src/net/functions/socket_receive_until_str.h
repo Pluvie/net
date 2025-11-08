@@ -3,5 +3,5 @@ struct result socket_receive_until_str (
     str terminator,
     str* output,
     uint max_length,
-    struct allocator* allocator
+    struct buffer* buffer
 );
