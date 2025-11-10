@@ -126,6 +126,8 @@ static struct result http_message_incipit_encode (
   str* incipit = &(message->incipit);
   uint incipit_length = 0;
   char* incipit_begin;
+  char content_length_buffer[INT_MAXNUM] = { 0 };
+  int content_length_buffer_size;
 
   if (unlikely(message->method.length > HTTP_METHOD_MAXLEN))
     return fail("http method too long");
@@ -168,12 +170,12 @@ static struct result http_message_incipit_encode (
 
   /* Adds the content length header, if a body is present. */
   if (!str_empty(message->body)) {
-    char buffer[INT_MAXCHARS] = { 0 };
-    int buffer_length = sprintf(buffer, "%"fmt(UINT), message->body.length);
-    incipit_length += sizeof("Content-Length") - 1;
+    content_length_buffer_size = sprintf(
+      content_length_buffer, "%"fmt(UINT), message->body.length);
+    incipit_length += Http.Content_Length.length;
     incipit_length += Http.Colon.length;
     incipit_length += Http.Space.length;
-    incipit_length += buffer_length;
+    incipit_length += content_length_buffer_size;
     incipit_length += Http.Crlf.length;
   }
 
@@ -193,12 +195,14 @@ static struct result http_message_incipit_encode (
   str_append(incipit, Http.Crlf);
 
   /* Line section is terminated. Begins the headers section. Starts by adding the only
-      mandatory HTTP header: Host. */
-  str_append(incipit, Http.Host);
-  str_append(incipit, Http.Colon);
-  str_append(incipit, Http.Space);
-  str_append(incipit, host);
-  str_append(incipit, Http.Crlf);
+    mandatory HTTP header: Host, unless already specified by the user defined headers. */
+  if (!http_headers_has(&(message->headers), Http.Host)) {
+    str_append(incipit, Http.Host);
+    str_append(incipit, Http.Colon);
+    str_append(incipit, Http.Space);
+    str_append(incipit, host);
+    str_append(incipit, Http.Crlf);
+  }
 
   { /* Add the HTTP headers. */
     str* key; str* value; struct iterator iter = { 0 };
@@ -213,16 +217,13 @@ static struct result http_message_incipit_encode (
 
   /* Adds the content length header, if a body is present. */
   if (!str_empty(message->body)) {
-    str content_length_header_name = str("Content-Length");
-    str content_length_header_value = { 0 };
-    char buffer[INT_MAXCHARS] = { 0 };
-    int buffer_length = sprintf(buffer, "%"fmt(UINT), message->body.length);
-    content_length_header_value.chars = buffer;
-    content_length_header_value.length = buffer_length;
-    str_append(incipit, content_length_header_name);
+    str content_length = { 0 };
+    content_length.chars = content_length_buffer;
+    content_length.length = content_length_buffer_size;
+    str_append(incipit, Http.Content_Length);
     str_append(incipit, Http.Colon);
     str_append(incipit, Http.Space);
-    str_append(incipit, content_length_header_value);
+    str_append(incipit, content_length);
     str_append(incipit, Http.Crlf);
   }
 
